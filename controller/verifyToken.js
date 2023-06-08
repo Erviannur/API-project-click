@@ -12,7 +12,7 @@ const verifyToken = (req, res, next) => {               //deklarasi.
     }
     
     //digunakan untuk memverifikasi keaslian token.
-    jwt.verify(token,process.env.TOKEN_SECRET , (err, decoded) => {   //token,process.env.TOKEN_SECRET callback untuk menangani hasil verifikasi.
+    jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {   //token,process.env.TOKEN_SECRET callback untuk menangani hasil verifikasi.
         if (err) {
             return res.status(401).send({
                 error: true,

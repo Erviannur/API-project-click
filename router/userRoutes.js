@@ -1,5 +1,5 @@
-const router = require("express").Router();         //modul express diimpor dan objek Router dari modul tersebut diambil untuk membuat router baru.
-const { uploadToGcs , multerUpload } = require("../config/uploadImage");
+const router = require('express').Router();         //modul express diimpor dan objek Router dari modul tersebut diambil untuk membuat router baru.
+const { uploadToGcs , multerUpload } = require('../config/uploadImage');
 const { 
     register,  
     login,
@@ -20,6 +20,6 @@ router.get("/privat-data", verifyToken, cekData);
 router.get("/news", news);
 router.get("/quiz", quiz);
 router.get("/profil", profil);
-router.post('/profil/images', multerUpload.single('image'), uploadToGcs, userImage);
+router.post('/profil/images', verifyToken, multerUpload.single('image'), uploadToGcs, userImage);
 
 module.exports = router;    //export router.

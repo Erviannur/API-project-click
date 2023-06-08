@@ -2,21 +2,17 @@ const db = require('../config/dbconnect');   //import objek db dari module dbcon
 const bcrypt = require ('bcryptjs');         //import bcryptjs dan menginisialisasinya dalam variabel lokal bernama bcrypt.
 const jwt = require ('jsonwebtoken');        //import jsonwebtoken dan menginisialisasinya dalam variabel lokal bernama jwt.
 const fs = require('fs');
-const {
-  ImgUpload,
-  multer
-} = require ('../config/uploadImage');
 
 //function register
 const register = async (req, res) => {                      //deklarasi register dengan operasi bersifat asinkron, menerima 2 parameter untuk mengelola permintaan dan respons HTTP.
-  const { email, password, username } = req.body              //mengambil properti username, email, dan password dari objek req.body.
+  const { email, password, username } = req.body            //mengambil properti username, email, dan password dari objek req.body.
   const salt = await bcrypt.genSalt();                      //untuk menghasilkan salt yang digunakan untuk mengenkripsi kata sandi, await digunakan untuk menunggu hasil dari operasi asinkron sebelum melanjutkan eksekusi kode berikutnya.
   const hashPassword = await bcrypt.hash(password, salt);   //mengenkripsi kata sandi menggunakan salt yang telah dihasilkan sebelumnya.
 
-  console.log(hashPassword);
+  console.log(hashPassword);                                //cetak hashPassword
   
   const values = [email, hashPassword, username];                                                                       //deklarasi array values yang berisi nilai-nilai yang akan dimasukkan ke dalam query SQL.
-  db.query('insert into users (email, password, username) values (?,?,?)', values, function(error, rows, fields) {    //pemanggilan db.query() yang digunakan untuk menjalankan query SQL untuk menyisipkan data pengguna baru ke dalam tabel users pada database.
+  db.query('insert into users (email, password, username) values (?,?,?)', values, function(error, rows, fields) {      //pemanggilan db.query() yang digunakan untuk menjalankan query SQL untuk menyisipkan data pengguna baru ke dalam tabel users pada database.
     
     //fungsi callback
     console.log(rows, fields)
@@ -80,41 +76,47 @@ const login = async (req, res) => {         //deklarasi login.
   });
 };
 
-//fungction cekdata
-const cekData = async (req, res) => {                         //deklarasi cekData.
-  console.log (req.userID)                                    //untuk mencetak req.userID.
-  db.query('SELECT * FROM users', function(error, rows) {     //menjalankan query SQL untuk mengambil semua data dari tabel users.
-    res.status(200).send({                                    //jika berhasil akan mengirimkan respons HTTP dengan status 200 dan data JSON yang berisi hasil dari query.
-      result: ({
-        data: rows[0].username
-      })
-    });
+//function cekdata
+const cekData = async (req, res) => {                         
+  const query = 'SELECT id, username, password, images, email FROM users';    //Query SQL SELECT ditentukan dengan mengambil kolom id, username, password, images, dan email dari tabel users. Query disimpan dalam variabel query                              
+  
+  db.query(query, (error, results) => {                                       //Eksekusi query menggunakan db.query() dengan callback function yang menerima error dan results.
+    if (error) {  //jika error 
+      console.error('Kesalahan menjalankan kueri:', error);
+      res.status(500).json({ error: 'Kesalahan Server Internal' });
+    } else {      //jika berhasil
+      res.status(200).json({                                   
+        result: ({
+          data: rows
+        })                                  
+      });  
+    }
   });
 };
 
 //function news
-const news = async (req, res) => {  
-  const query = 'SELECT id, images, title, description, link FROM news';
+const news = async (req, res) => {
+  const query = 'SELECT id, images, title, description, link FROM news';    //Query SQL SELECT ditentukan dengan mengambil kolom id, images, title, description, dan link dari tabel news. Query disimpan dalam variabel query.
 
-  db.query(query, (error, results) => {
-    if (error) {
+  db.query(query, (error, results) => {                                     //Eksekusi query menggunakan db.query().
+    if (error) {    //jika error
       console.error('Kesalahan menjalankan kueri:', error);
       res.status(500).json({ error: 'Kesalahan Server Internal' });
-    } else {
-      res.status(200).json(results);                                   //jika berhasil akan mengirimkan respons HTTP dengan status 200 dan data JSON yang berisi hasil dari query.
+    } else {        //jika berhasil
+      res.status(200).json(results);
     }
   });
 };
 
 //function quiz
 const quiz = async (req, res) => {    
-  const query = 'SELECT id, nomor, question, option_a, option_b, option_c, option_d FROM quiz';
+  const query = 'SELECT id, nomor, question, option_a, option_b, option_c, option_d FROM quiz';       //Query SQL SELECT ditentukan dengan mengambil kolom id, images, title, description, dan link dari tabel news. Query disimpan dalam variabel query.
 
-  db.query(query, (error, results) => {
-    if (error) {
+  db.query(query, (error, results) => {                                                               //Eksekusi query menggunakan db.query()
+    if (error) {    //jika error
       console.error('Kesalahan menjalankan kueri:', error);
       res.status(500).json({ error: 'Kesalahan Server Internal' });
-    } else {
+    } else {        //jika berhasil
       res.status(200).json(results);
     }
   });
@@ -122,48 +124,49 @@ const quiz = async (req, res) => {
 
 //Function profil
 const profil = async (req, res) => {      
-  const query = 'SELECT id, username, email, password FROM users';
+  const query = 'SELECT id, username, email FROM users';              //Query SQL SELECT ditentukan dengan mengambil kolom id, images, title, description, dan link dari tabel news. Query disimpan dalam variabel query.
 
-  db.query(query, (error, results) => {
-    if (error) {
+  db.query(query, (error, results) => {                               //Eksekusi query menggunakan db.query()
+    if (error) {    //jika error
       console.error('Kesalahan menjalankan kueri:', error);
       res.status(500).json({ error: 'Kesalahan Server Internal' });
-    } else {
+    } else {        //jika berhasil
       res.status(200).json(results);
     }
   });
 };
 
 //function update Photo Profil
-const userImage = async  (req, res) =>{
-  try {
+const userImage = async (req, res) => {
+  try{                                                    //memeriksa apakah req.file tersedia atau tidak.
     if (!req.file){
       return res.status(401).json({
-        message : "gagal upload image"
-      })
+          message: "gagal upload image"
+      });
     }
-    const id = req.userID
+    //Jika req.file tersedia, dapatkan id pengguna dari req.userID dan imageUrl dari req.file.cloudStoragePublicUrl.
+    const id = req.userID;
     const imageUrl = req.file.cloudStoragePublicUrl;
 
-    console.log(imageUrl)
-    const query = `UPDATE users SET images = ? WHERE id = ?`;
-    db.query(query, [imageUrl, id], function(error, result) {
-      if (error) {
-        console.log('Tidak dapat mengupdate data:', error);
-        // Handle error
-        res.status(500).json({ success: false, message: 'gagal mengupdate image URL' });
-      } else {
+    console.log(imageUrl);
+    console.log(id);
+    const query = 'UPDATE users SET images = ? WHERE id = ?';                   //Tentukan query SQL UPDATE yang akan mengupdate kolom images pada tabel users dengan nilai imageUrl berdasarkan id pengguna.
+
+    db.query(query, [imageUrl.toString(), id], function(error, results) {       //Eksekusi query menggunakan db.query() dengan menggunakan placeholder ? untuk parameter pada query
+      if(error) {     //jika error
+        console.log('Kesalahan mengupdate data:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengupdate image URL' });
+      } else {        //jika berhasil
         console.log('Data berhasil diupdate');
-        // Handle success
         res.status(200).json({ success: true, message: 'Image URL berhasil diupdate' });
       }
     });
-  } catch (error) {
-    return res.send(error)
-  }
+  } catch (error) {                //Jika terjadi kesalahan pada blok try, tangkap kesalahan dengan blok catch
+      return res.send(error);
+    }
 };
 
-module.exports = {    //mengekspor objek register, login, dan cekData.
+module.exports = {    //mengekspor objek register, login, cekData, news, quiz, profil, dan userImage
   register,
   login,
   cekData,
