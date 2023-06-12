@@ -19,7 +19,7 @@ router.post("/login", authValidator.login, login);
 router.get("/privat-data", verifyToken, cekData);
 router.get("/news", news);
 router.get("/quiz", quiz);
-router.get("/profil", profil);
+router.get("/profil", verifyToken, profil);
 router.post('/profil/images', verifyToken, multerUpload.single('image'), uploadToGcs, userImage);
 
 module.exports = router;    //export router.

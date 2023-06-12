@@ -123,17 +123,38 @@ const quiz = async (req, res) => {
 };
 
 //Function profil
-const profil = async (req, res) => {      
-  const query = 'SELECT id, username, email FROM users';              //Query SQL SELECT ditentukan dengan mengambil kolom id, images, title, description, dan link dari tabel news. Query disimpan dalam variabel query.
+const profil = async (req, res) => {
+  // Mendapatkan token JWT dari header atau request body, sesuai dengan implementasi Anda
+  const token = req.headers.authorization;
 
-  db.query(query, (error, results) => {                               //Eksekusi query menggunakan db.query()
-    if (error) {    //jika error
-      console.error('Kesalahan menjalankan kueri:', error);
-      res.status(500).json({ error: 'Kesalahan Server Internal' });
-    } else {        //jika berhasil
-      res.status(200).json(results);
-    }
-  });
+  try {
+    // Memverifikasi dan memecahkan token JWT
+    const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+
+    // Mendapatkan data pengguna dari token yang telah didecode
+    const userID = decodedToken.userID;
+
+    // Lakukan kueri untuk mendapatkan profil pengguna berdasarkan userId
+    db.query('SELECT * FROM users WHERE id = ?', [userID], (error, rows) => {
+      if (error) {
+        console.error('Kesalahan menjalankan kueri:', error);
+        res.status(500).json({ error: 'Kesalahan Server Internal' });
+      } else {
+        if (rows.length > 0) {
+          return res.status(200).json({
+            username: rows[0].username,
+            email: rows[0].email,
+            password: rows[0].password
+          });
+        } else {
+          res.status(404).json({ error: 'Profil pengguna tidak ditemukan' });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Kesalahan dalam memverifikasi atau memecahkan token JWT:', error);
+    res.status(401).json({ error: 'Token JWT tidak valid' });
+  }
 };
 
 //function update Photo Profil
